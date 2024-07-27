@@ -15,16 +15,17 @@ const getHotel = async (req, res) => {
   try {
     console.log("get hotel hit");
     let query = {};
-    if (!!location) {
-      console.log("location available");
-      query = { country: location };
-      const result = await hotelModel.find(query);
-      res.send({ result });
-    } else {
-      console.log("location not available");
-      const result = await hotelModel.find();
-      res.send({ result });
-    }
+    res.send({ result: "deployedment successfull" });
+    // if (!!location) {
+    //   console.log("location available");
+    //   query = { country: location };
+    //   const result = await hotelModel.find(query);
+    //   res.send({ result });
+    // } else {
+    //   console.log("location not available");
+    //   const result = await hotelModel.find();
+    //   res.send({ result });
+    // }
   } catch (e) {
     res.send({ error: e });
   }

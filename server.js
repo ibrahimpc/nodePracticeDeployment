@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const app = express();
 app.use(express.json());
 
-require("./src/config/db");
+// require("./src/config/db");
 // const userSchema = new mongoose.Schema({
 //     name:String,
 //     age:Number
