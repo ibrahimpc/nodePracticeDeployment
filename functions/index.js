@@ -10,6 +10,16 @@
 const {onRequest, onCall} = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 
+const {initializeApp, applicationDefault} = require("firebase-admin/app");
+
+const {getFirestore} = require("firebase-admin/firestore");
+
+initializeApp({
+  credential: applicationDefault(),
+});
+
+const db = getFirestore();
+
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
@@ -29,4 +39,31 @@ exports.firstOnCallFunction = onCall((req, context) => {
   return {
     response: `Hello from on call cloud function : your message is ${message}`,
   };
+});
+
+exports.registerFCMToken = onCall(async (req) => {
+  try {
+    logger.info("FCM Req Log", req.body);
+
+    const {clientType, mobileNumber, token} = req.data;
+
+    if (!clientType || !mobileNumber || !token) {
+      return {message: "invalidField"};
+    }
+
+    const dbRef = db.collection(clientType).doc(mobileNumber);
+    const docSnap = await dbRef.get();
+    const existingData = docSnap.exists ? docSnap.data() : {};
+
+    const updatedDeviceTokens = existingData.deviceTokens ?
+    [...new Set([...existingData.deviceTokens, token])] :
+    [token];
+
+    await dbRef.set({deviceTokens: updatedDeviceTokens}, {merge: true});
+
+    return {message: "success"};
+  } catch (e) {
+    logger.info("FCM Req Error", e);
+    return {message: "error", error: e.message};
+  }
 });
