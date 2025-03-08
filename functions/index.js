@@ -39,7 +39,7 @@ exports.firstOnCallFunction = onCall((req, context) => {
 
 exports.registerFCMToken = onCall(async (req) => {
   try {
-    logger.info("FCM Req Log", req.body);
+    logger.info("FCM Req Log", req.data);
 
     const {clientType, mobileNumber, token} = req.data;
 
@@ -92,6 +92,7 @@ exports.triggerPushNotification = onCall(async (req) => {
       placed: "New Order Received!",
       updated: "Order Status Updated",
       cancelled: "Order Cancelled",
+      completed: "Order Completed"
     };
 
     const message = {
@@ -116,5 +117,42 @@ exports.triggerPushNotification = onCall(async (req) => {
   } catch (e) {
     logger.info("Trigger Push Notification Failure", e);
     throw new Error("Failed to send notification");
+  }
+});
+
+exports.deactivateFCMToken = onCall(async (req) => {
+  try {
+    logger.info("FCM Remove Req Log", req.data);
+
+    const { clientType, mobileNumber, token } = req.data;
+
+    if (!clientType || !mobileNumber || !token) {
+      return { message: "invalidField" };
+    }
+
+    const collectionName =
+      clientType === "shopManager" || clientType === "shopCustomer"
+        ? "shops"
+        : clientType;
+
+    const tokenField =
+      clientType === "shopManager"
+        ? "shopManagerDeviceTokens"
+        : clientType === "shopCustomer"
+        ? "shopCustomerDeviceTokens"
+        : "deviceTokens";
+
+    await db.collection(collectionName).doc(mobileNumber).update({
+      [tokenField]: FieldValue.arrayRemove(token),
+    });
+
+    await db.collection("tokens").doc(clientType).update({
+      deviceTokens: FieldValue.arrayRemove(token),
+    });
+
+    return { message: "success" };
+  } catch (e) {
+    logger.error("FCM Remove Req Error", e);
+    return { message: "error", error: e.message };
   }
 });
